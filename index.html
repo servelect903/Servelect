@@ -1,56 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="0; url=">
-    <script>
-        // Intentar varias rutas posibles
-        var baseUrl = "";
-        var possiblePaths = [
-            "/servelect/",
-            "/servelect/SISTEMA-DE-FACTURACI-N-SERVELECT/FACTURACION%20SISTEMAS/PAGINA%20COMPLETA/",
-            "/servelect/SISTEMA-DE-FACTURACI-N-SERVELECT/FACTURACION SISTEMAS/PAGINA COMPLETA/",
-            "/"
-        ];
-        
-        function tryPaths() {
-            for (var i = 0; i < possiblePaths.length; i++) {
-                var testUrl = baseUrl + possiblePaths[i];
-                console.log("Testing: " + testUrl);
-                
-                // Crear una imagen para probar si la ruta existe
-                var img = new Image();
-                img.onload = function() {
-                    window.location.href = testUrl;
-                    return;
-                };
-                img.onerror = function() {
-                    // Continuar con la siguiente ruta
-                };
-                img.src = testUrl + '?test=' + Date.now();
-            }
-            
-            // Si ninguna ruta funciona, redirigir a la base
-            setTimeout(function() {
-                window.location.href = baseUrl;
-            }, 1000);
-        }
-        
-        // Ejecutar la prueba de rutas
-        tryPaths();
-    </script>
-    <title>Redirecting to Servelect</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 2s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+    <title>Servelect</title>
+    <meta http-equiv="refresh" content="0; url=https://uninventive-unresolved-oliva.ngrok-free.dev/servelect/">
+    <script>window.location.href = "https://uninventive-unresolved-oliva.ngrok-free.dev/servelect/";</script>
 </head>
-<body>
-    <div class="spinner"></div>
-    <h2>Redirecting to Servelect...</h2>
-    <p>Finding the correct application path...</p>
-    <p>If you are not redirected automatically, try these links:</p>
-    <p><a href="/servelect/">/servelect/</a></p>
-    <p><a href="/">Base URL</a></p>
+<body style="font-family: Arial; text-align: center; padding: 50px;">
+    <h2>Redirigiendo a Servelect...</h2>
+    <p><a href="https://uninventive-unresolved-oliva.ngrok-free.dev/servelect/">Click aquí si no redirige</a></p>
 </body>
 </html>
