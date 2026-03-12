@@ -52,46 +52,89 @@
     </div>
 
     <script>
-        // URL base del servidor (se inyecta desde el script)
-        const baseUrl = 'https://a8f68e-ip-38-254-104-19.tunnelmole.net';
-        const palabra = 'Servelect';
-        const urlCompleta = baseUrl + '/' + palabra;
-        const urlImagen = baseUrl + '/pixel.png';  // Imagen de prueba en la raíz del servidor
+        // Datos iniciales (se inyectan desde el script Bash)
+        const baseUrlInicial = '$NEW_URL';
+        const palabra = '$PALABRA';
+        let baseUrl = baseUrlInicial;
 
-        // Mostrar la URL en el detalle
+        const urlCompleta = () => baseUrl + '/' + palabra;
+        const urlImagen = () => baseUrl + '/pixel.png';
+
         document.getElementById('urlDisplay').textContent = baseUrl;
 
-        // Función para comprobar si el servidor responde
-        function comprobarServidor() {
+        // Función para comprobar servidor con timeout (5 segundos)
+        function comprobarServidor(timeoutMs = 5000) {
             return new Promise((resolve) => {
                 const img = new Image();
-                img.onload = () => resolve(true);
-                img.onerror = () => resolve(false);
-                // Añadir un timestamp para evitar caché
-                img.src = urlImagen + '?' + new Date().getTime();
+                const timeout = setTimeout(() => {
+                    img.onload = null;
+                    img.onerror = null;
+                    resolve(false); // Timeout: se considera no disponible
+                }, timeoutMs);
+
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    resolve(true);
+                };
+                img.onerror = () => {
+                    clearTimeout(timeout);
+                    resolve(false);
+                };
+                // Añadir timestamp para evitar caché
+                img.src = urlImagen() + '?' + new Date().getTime();
             });
         }
 
-        // Función para redirigir
-        function redirigir() {
-            window.location.href = urlCompleta;
+        // Función para obtener la URL actualizada desde url.json
+        async function obtenerConfiguracion() {
+            try {
+                const response = await fetch('url.json?timestamp=' + new Date().getTime());
+                if (!response.ok) return null;
+                const config = await response.json();
+                return config;
+            } catch (e) {
+                return null;
+            }
         }
 
-        // Función principal de verificación
+        // Variable para controlar el ciclo de verificación
+        let verificando = false;
+
         async function verificarYRedirigir() {
-            const disponible = await comprobarServidor();
+            if (verificando) return;
+            verificando = true;
+
+            // 1. Comprobar si la URL ha cambiado (consultando JSON)
+            const config = await obtenerConfiguracion();
+            if (config && config.url && config.url !== baseUrl) {
+                baseUrl = config.url;
+                document.getElementById('urlDisplay').textContent = baseUrl;
+                document.getElementById('detalle').innerHTML = `Nueva URL detectada: ${baseUrl}. Reiniciando verificación...`;
+                verificando = false;
+                setTimeout(verificarYRedirigir, 1000);
+                return;
+            }
+
+            // 2. Verificar disponibilidad del servidor actual
+            const disponible = await comprobarServidor(5000);
             if (disponible) {
                 document.getElementById('estado').innerHTML = '✅ Servidor disponible. Redirigiendo...';
-                setTimeout(redirigir, 1000);  // Pequeña pausa para que el usuario vea el mensaje
+                setTimeout(() => { window.location.href = urlCompleta(); }, 1000);
             } else {
-                document.getElementById('estado').innerHTML = '<span class="error">❌ Servidor no disponible</span>';
-                document.getElementById('detalle').innerHTML += '<br>Reintentando en 5 segundos...';
+                document.getElementById('estado').innerHTML = '<span class="error">❌ Servidor no disponible (timeout o error)</span>';
+                document.getElementById('detalle').innerHTML = `Intentando con: ${baseUrl}<br>Reintentando en 5 segundos...`;
+                verificando = false;
                 setTimeout(verificarYRedirigir, 5000);
             }
         }
 
-        // Iniciar verificación
+        // Iniciar verificación y programar revisión periódica de la URL
         verificarYRedirigir();
+        setInterval(async () => {
+            if (!verificando) {
+                verificarYRedirigir();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
