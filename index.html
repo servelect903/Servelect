@@ -1,287 +1,140 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Servidor</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --verde: #00e676;
-      --verde-hover: #00c853;
-      --verde-glow: rgba(0, 230, 118, 0.45);
-      --rojo: #ff5252;
-      --fondo: #0a0f0d;
-      --panel: #111a14;
-      --borde: #1e3326;
-      --texto: #c8e6c9;
-      --texto-dim: #4a6856;
-    }
-    body {
-      background: var(--fondo);
-      color: var(--texto);
-      font-family: 'Space Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(var(--borde) 1px, transparent 1px),
-        linear-gradient(90deg, var(--borde) 1px, transparent 1px);
-      background-size: 40px 40px;
-      opacity: 0.4;
-      pointer-events: none;
-    }
-    body::after {
-      content: '';
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(0,230,118,0.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .card {
-      position: relative;
-      background: var(--panel);
-      border: 1px solid var(--borde);
-      border-radius: 16px;
-      padding: 52px 48px;
-      max-width: 520px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,230,118,0.05);
-      animation: aparecer 0.6s ease both;
-    }
-    @keyframes aparecer {
-      from { opacity: 0; transform: translateY(24px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 10%; right: 10%;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--verde), transparent);
-      border-radius: 2px;
-    }
-    .icono { font-size: 48px; margin-bottom: 20px; animation: pulso 3s ease-in-out infinite; }
-    @keyframes pulso {
-      0%,100% { filter: drop-shadow(0 0 12px var(--verde-glow)); }
-      50% { filter: drop-shadow(0 0 28px var(--verde-glow)); }
-    }
-    h1 {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.8rem; color: #fff;
-      letter-spacing: -0.5px; margin-bottom: 10px;
-    }
-    .subtitulo {
-      color: var(--texto-dim); font-size: 0.8rem;
-      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 36px;
-    }
-    .pantalla { display: none; flex-direction: column; align-items: center; gap: 20px; }
-    .pantalla.activa { display: flex; animation: fadeIn 0.3s ease both; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .url-box {
-      background: rgba(0,230,118,0.05);
-      border: 1px solid rgba(0,230,118,0.15);
-      border-radius: 8px; padding: 12px 20px;
-      font-size: 0.75rem; color: var(--texto-dim);
-      word-break: break-all; width: 100%;
-    }
-    .url-box span { color: var(--verde); }
-
-    .btn-conectar {
-      background: var(--verde); color: #021a0b; border: none;
-      border-radius: 12px; padding: 20px 48px;
-      font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 0 30px var(--verde-glow), 0 4px 20px rgba(0,0,0,0.4);
-      width: 100%;
-    }
-    .btn-conectar:hover {
-      background: var(--verde-hover); transform: translateY(-2px);
-      box-shadow: 0 0 45px var(--verde-glow), 0 8px 30px rgba(0,0,0,0.5);
-    }
-    .btn-conectar:active { transform: translateY(0); }
-
-    .spinner-wrap { position: relative; width: 72px; height: 72px; }
-    .spinner {
-      width: 72px; height: 72px;
-      border: 3px solid rgba(0,230,118,0.15);
-      border-top-color: var(--verde);
-      border-radius: 50%; animation: girar 0.9s linear infinite;
-    }
-    @keyframes girar { to { transform: rotate(360deg); } }
-    .spinner-dot {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      width: 10px; height: 10px;
-      background: var(--verde); border-radius: 50%;
-      box-shadow: 0 0 12px var(--verde-glow);
-    }
-    .msg { color: var(--texto); font-size: 0.9rem; }
-    .msg small { display: block; color: var(--texto-dim); font-size: 0.72rem; margin-top: 6px; }
-
-    .check-circle {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: rgba(0,230,118,0.12); border: 2px solid var(--verde);
-      display: flex; align-items: center; justify-content: center; font-size: 32px;
-      box-shadow: 0 0 24px var(--verde-glow);
-      animation: popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both;
-    }
-    @keyframes popIn { from { transform: scale(0.5); opacity:0; } to { transform: scale(1); opacity:1; } }
-
-    .error-circle {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: rgba(255,82,82,0.1); border: 2px solid var(--rojo);
-      display: flex; align-items: center; justify-content: center; font-size: 32px;
-    }
-    .msg-error { color: var(--rojo); font-size: 0.9rem; }
-    .msg-error small { display: block; color: var(--texto-dim); font-size: 0.72rem; margin-top: 6px; }
-
-    .btn-reintentar {
-      background: transparent; color: var(--verde);
-      border: 1px solid var(--verde); border-radius: 8px;
-      padding: 12px 32px; font-family: 'Space Mono', monospace;
-      font-size: 0.85rem; cursor: pointer;
-      transition: background 0.2s, color 0.2s;
-    }
-    .btn-reintentar:hover { background: var(--verde); color: #021a0b; }
-
-    .timestamp {
-      position: absolute; bottom: 14px; right: 18px;
-      font-size: 0.62rem; color: var(--texto-dim);
-    }
-  </style>
+    <title>Redirigiendo a mi servidor...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f0f0f0;
+        }
+        .mensaje {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #e74c3c;
+        }
+        .info {
+            color: #555;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
-<div class="card">
-
-  <div class="icono">&#128187;</div>
-  <h1>Mi Servidor</h1>
-  <p class="subtitulo">Acceso personal</p>
-
-  <div id="p-inicio" class="pantalla activa">
-    <div class="url-box">Destino: <span id="url-display">cargando...</span></div>
-    <button class="btn-conectar" onclick="iniciarConexion()">
-      &#9889; Conectar con el Servidor
-    </button>
-  </div>
-
-  <div id="p-verificando" class="pantalla">
-    <div class="spinner-wrap">
-      <div class="spinner"></div>
-      <div class="spinner-dot"></div>
+    <div class="mensaje">
+        <h2>🌐 Conectando con mi servidor personal...</h2>
+        <div id="estado" class="info">
+            <span class="loading"></span> Verificando disponibilidad...
+        </div>
+        <div id="detalle" style="font-size: 14px; color: #777; margin-top: 20px;">
+            Intentando conectar con: <span id="urlDisplay"></span>
+        </div>
     </div>
-    <div class="msg">
-      Verificando disponibilidad...
-      <small id="url-verificando"></small>
-    </div>
-  </div>
 
-  <div id="p-exito" class="pantalla">
-    <div class="check-circle">&#10003;</div>
-    <div class="msg">Servidor activo! Redirigiendo...</div>
-  </div>
+    <script>
+        // Datos iniciales (se inyectan desde el script Bash)
+        const baseUrlInicial = '$NEW_URL';
+        const palabra = '$PALABRA';
+        let baseUrl = baseUrlInicial;
 
-  <div id="p-error" class="pantalla">
-    <div class="error-circle">&#10005;</div>
-    <div class="msg-error">
-      Servidor no disponible
-      <small id="msg-error-detalle">El servidor no respondio.</small>
-    </div>
-    <button class="btn-reintentar" onclick="iniciarConexion()">
-      &#8635; Reintentar
-    </button>
-  </div>
+        const urlCompleta = () => baseUrl + '/' + palabra;
+        const urlImagen = () => baseUrl + '/pixel.png';
 
-  <span class="timestamp" id="ts"></span>
-</div>
+        document.getElementById('urlDisplay').textContent = baseUrl;
 
-<script>
-var urlServidor = '';
-var palabraClave = '';
+        // Función para comprobar servidor con timeout (5 segundos)
+        function comprobarServidor(timeoutMs = 5000) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const timeout = setTimeout(() => {
+                    img.onload = null;
+                    img.onerror = null;
+                    resolve(false); // Timeout: se considera no disponible
+                }, timeoutMs);
 
-function mostrar(id) {
-  document.querySelectorAll('.pantalla').forEach(function(p) {
-    p.classList.remove('activa');
-  });
-  document.getElementById(id).classList.add('activa');
-}
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    resolve(true);
+                };
+                img.onerror = () => {
+                    clearTimeout(timeout);
+                    resolve(false);
+                };
+                // Añadir timestamp para evitar caché
+                img.src = urlImagen() + '?' + new Date().getTime();
+            });
+        }
 
-function cargarConfig() {
-  return fetch('url.json?t=' + Date.now())
-    .then(function(r) {
-      if (!r.ok) throw new Error('no ok');
-      return r.json();
-    })
-    .then(function(d) {
-      urlServidor = (d.url || '').trim().replace(/\/$/, '');
-      palabraClave = (d.palabra || '').trim().replace(/^\//, '');
-      document.getElementById('url-display').textContent = urlServidor + '/' + palabraClave;
-      if (d.timestamp) {
-        document.getElementById('ts').textContent =
-          'Act: ' + new Date(d.timestamp * 1000).toLocaleString('es');
-      }
-    })
-    .catch(function() {
-      document.getElementById('url-display').textContent = 'Error leyendo url.json';
-    });
-}
+        // Función para obtener la URL actualizada desde url.json
+        async function obtenerConfiguracion() {
+            try {
+                const response = await fetch('url.json?timestamp=' + new Date().getTime());
+                if (!response.ok) return null;
+                const config = await response.json();
+                return config;
+            } catch (e) {
+                return null;
+            }
+        }
 
-// Verificacion no-cors con timeout de 8 segundos
-// Servidor UP -> fetch resuelve con respuesta opaca -> true
-// Servidor DOWN -> fetch lanza error de red -> false
-function verificarServidor(url) {
-  return new Promise(function(resolve) {
-    var controller = new AbortController();
-    var timer = setTimeout(function() {
-      controller.abort();
-      resolve(false);
-    }, 8000);
-    fetch(url, { mode: 'no-cors', signal: controller.signal })
-      .then(function() { clearTimeout(timer); resolve(true); })
-      .catch(function() { clearTimeout(timer); resolve(false); });
-  });
-}
+        // Variable para controlar el ciclo de verificación
+        let verificando = false;
 
-function iniciarConexion() {
-  mostrar('p-verificando');
-  cargarConfig().then(function() {
-    if (!urlServidor) {
-      document.getElementById('msg-error-detalle').textContent =
-        'No se pudo leer url.json';
-      mostrar('p-error');
-      return;
-    }
-    var destino = urlServidor + '/' + palabraClave;
-    document.getElementById('url-verificando').textContent = destino;
-    verificarServidor(destino).then(function(activo) {
-      if (activo) {
-        mostrar('p-exito');
-        setTimeout(function() { window.location.href = destino; }, 1200);
-      } else {
-        document.getElementById('msg-error-detalle').textContent =
-          destino + ' no respondio. Verifica que el servidor este encendido.';
-        mostrar('p-error');
-      }
-    });
-  });
-}
+        async function verificarYRedirigir() {
+            if (verificando) return;
+            verificando = true;
 
-cargarConfig();
-</script>
-</div>
+            // 1. Comprobar si la URL ha cambiado (consultando JSON)
+            const config = await obtenerConfiguracion();
+            if (config && config.url && config.url !== baseUrl) {
+                baseUrl = config.url;
+                document.getElementById('urlDisplay').textContent = baseUrl;
+                document.getElementById('detalle').innerHTML = `Nueva URL detectada: ${baseUrl}. Reiniciando verificación...`;
+                verificando = false;
+                setTimeout(verificarYRedirigir, 1000);
+                return;
+            }
+
+            // 2. Verificar disponibilidad del servidor actual
+            const disponible = await comprobarServidor(5000);
+            if (disponible) {
+                document.getElementById('estado').innerHTML = '✅ Servidor disponible. Redirigiendo...';
+                setTimeout(() => { window.location.href = urlCompleta(); }, 1000);
+            } else {
+                document.getElementById('estado').innerHTML = '<span class="error">❌ Servidor no disponible (timeout o error)</span>';
+                document.getElementById('detalle').innerHTML = `Intentando con: ${baseUrl}<br>Reintentando en 5 segundos...`;
+                verificando = false;
+                setTimeout(verificarYRedirigir, 5000);
+            }
+        }
+
+        // Iniciar verificación y programar revisión periódica de la URL
+        verificarYRedirigir();
+        setInterval(async () => {
+            if (!verificando) {
+                verificarYRedirigir();
+            }
+        }, 30000);
+    </script>
 </body>
 </html>
