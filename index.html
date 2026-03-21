@@ -87,6 +87,7 @@
     .pantalla { display:none; flex-direction:column; align-items:center; gap:20px; }
     .pantalla.activa { display:flex; animation: fadeIn 0.3s ease both; }
     @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
     .url-box {
       background: rgba(0,230,118,0.05);
       border: 1px solid rgba(0,230,118,0.15);
@@ -95,6 +96,7 @@
       word-break:break-all; width:100%;
     }
     .url-box span { color:var(--verde); }
+
     .btn-conectar {
       background:var(--verde); color:#021a0b; border:none;
       border-radius:12px; padding:20px 48px;
@@ -109,6 +111,7 @@
       box-shadow: 0 0 45px var(--verde-glow), 0 8px 30px rgba(0,0,0,0.5);
     }
     .btn-conectar:active { transform:translateY(0); }
+
     .spinner-wrap { position:relative; width:72px; height:72px; }
     .spinner {
       width:72px; height:72px;
@@ -126,6 +129,7 @@
     }
     .msg { color:var(--texto); font-size:0.9rem; }
     .msg small { display:block; color:var(--texto-dim); font-size:0.72rem; margin-top:6px; }
+
     .check-circle {
       width:72px; height:72px; border-radius:50%;
       background:rgba(0,230,118,0.12); border:2px solid var(--verde);
@@ -134,6 +138,7 @@
       animation: popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both;
     }
     @keyframes popIn { from{transform:scale(0.5);opacity:0;} to{transform:scale(1);opacity:1;} }
+
     .error-circle {
       width:72px; height:72px; border-radius:50%;
       background:rgba(255,82,82,0.1); border:2px solid var(--rojo);
@@ -141,6 +146,7 @@
     }
     .msg-error { color:var(--rojo); font-size:0.9rem; }
     .msg-error small { display:block; color:var(--texto-dim); font-size:0.72rem; margin-top:6px; }
+
     .btn-reintentar {
       background:transparent; color:var(--verde);
       border:1px solid var(--verde); border-radius:8px;
@@ -149,6 +155,7 @@
       transition: background 0.2s, color 0.2s;
     }
     .btn-reintentar:hover { background:var(--verde); color:#021a0b; }
+
     .timestamp {
       position:absolute; bottom:14px; right:18px;
       font-size:0.62rem; color:var(--texto-dim);
@@ -209,6 +216,7 @@ function mostrar(id) {
   document.getElementById(id).classList.add('activa');
 }
 
+// Siempre lee url.json fresco (sin cache) para tener la URL mas reciente
 function cargarConfig() {
   return fetch('url.json?t=' + Date.now())
     .then(function(r) {
@@ -229,23 +237,41 @@ function cargarConfig() {
     });
 }
 
+// Verificacion real via /ping.php en el servidor
+// El servidor responde con CORS headers, asi que fetch normal funciona.
+// Si responde cualquier cosa (incluso 404) = servidor UP.
+// Si falla la red o hay timeout = servidor DOWN.
 function verificarServidor(baseUrl) {
   var pingUrl = baseUrl + '/ping.php?t=' + Date.now();
   return new Promise(function(resolve) {
     var controller = new AbortController();
     var timer = setTimeout(function() {
       controller.abort();
-      resolve(false);
+      resolve(false); // timeout = servidor caido
     }, 8000);
 
-    fetch(pingUrl, { method: 'GET', signal: controller.signal, cache: 'no-store' })
-    .then(function(r) { clearTimeout(timer); resolve(true); })
-    .catch(function(err) { clearTimeout(timer); resolve(false); });
+    fetch(pingUrl, {
+      method: 'GET',
+      signal: controller.signal,
+      cache:  'no-store'
+    })
+    .then(function(r) {
+      clearTimeout(timer);
+      // Cualquier respuesta HTTP = servidor activo
+      resolve(true);
+    })
+    .catch(function(err) {
+      clearTimeout(timer);
+      // Error de red = servidor caido o inaccesible
+      resolve(false);
+    });
   });
 }
 
 function iniciarConexion() {
   mostrar('p-verificando');
+
+  // Siempre recarga url.json para usar la URL mas actualizada
   cargarConfig().then(function() {
     if (!urlServidor) {
       document.getElementById('msg-error-detalle').textContent =
@@ -253,13 +279,17 @@ function iniciarConexion() {
       mostrar('p-error');
       return;
     }
+
     var destino = urlServidor + '/' + palabraClave;
     document.getElementById('url-verificando').textContent =
       'Consultando: ' + urlServidor + '/ping.php';
+
     verificarServidor(urlServidor).then(function(activo) {
       if (activo) {
         mostrar('p-exito');
-        setTimeout(function() { window.location.href = destino; }, 1200);
+        setTimeout(function() {
+          window.location.href = destino;
+        }, 1200);
       } else {
         document.getElementById('msg-error-detalle').textContent =
           destino + ' no respondio. Verifica que el servidor este encendido.';
