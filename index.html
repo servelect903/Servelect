@@ -242,6 +242,16 @@ function cargarConfig() {
 // Si responde cualquier cosa (incluso 404) = servidor UP.
 // Si falla la red o hay timeout = servidor DOWN.
 function verificarServidor(baseUrl) {
+  // Esta pagina es HTTPS (GitHub Pages). Si el servidor activo es HTTP
+  // plano (ej. bore.pub, que no hace TLS), el navegador bloquea el
+  // fetch() por "mixed content" SIEMPRE, aunque el servidor este
+  // perfecto - por eso la navegacion directa funcionaba pero el boton no.
+  // En ese caso no hay forma de verificar por fetch desde esta pagina;
+  // se confia en la navegacion directa (que si funciona) y se pasa de largo.
+  if (baseUrl.indexOf('https://') !== 0) {
+    return Promise.resolve(true);
+  }
+
   var pingUrl = baseUrl + '/ping.php?t=' + Date.now();
   return new Promise(function(resolve) {
     var controller = new AbortController();
