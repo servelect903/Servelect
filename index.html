@@ -241,23 +241,12 @@ function cargarConfig() {
 // El servidor responde con CORS headers, asi que fetch normal funciona.
 // Si responde cualquier cosa (incluso 404) = servidor UP.
 // Si falla la red o hay timeout = servidor DOWN.
-function verificarServidor(baseUrl) {
-  // Esta pagina es HTTPS (GitHub Pages). Si el servidor activo es HTTP
-  // plano (ej. bore.pub, que no hace TLS), el navegador bloquea el
-  // fetch() por "mixed content" SIEMPRE, aunque el servidor este
-  // perfecto - por eso la navegacion directa funcionaba pero el boton no.
-  // En ese caso no hay forma de verificar por fetch desde esta pagina;
-  // se confia en la navegacion directa (que si funciona) y se pasa de largo.
-  if (baseUrl.indexOf('https://') !== 0) {
-    return Promise.resolve(true);
-  }
-
-  var pingUrl = baseUrl + '/ping.php?t=' + Date.now();
+function intentarPing(pingUrl) {
   return new Promise(function(resolve) {
     var controller = new AbortController();
     var timer = setTimeout(function() {
       controller.abort();
-      resolve(false); // timeout = servidor caido
+      resolve(false); // timeout = servidor caido (o no respondio a tiempo)
     }, 8000);
 
     fetch(pingUrl, {
@@ -276,6 +265,34 @@ function verificarServidor(baseUrl) {
       resolve(false);
     });
   });
+}
+
+function verificarServidor(baseUrl) {
+  // Esta pagina es HTTPS (GitHub Pages). Si el servidor activo es HTTP
+  // plano (ej. bore.pub, que no hace TLS), el navegador bloquea el
+  // fetch() por "mixed content" SIEMPRE, aunque el servidor este
+  // perfecto - por eso la navegacion directa funcionaba pero el boton no.
+  // En ese caso no hay forma de verificar por fetch desde esta pagina;
+  // se confia en la navegacion directa (que si funciona) y se pasa de largo.
+  if (baseUrl.indexOf('https://') !== 0) {
+    return Promise.resolve(true);
+  }
+
+  // tailscale funnel (backend de respaldo desde que se quito bore.pub) ha
+  // mostrado fallos intermitentes (~20%, ver monitor_services.sh). Un solo
+  // intento aqui bastaba para mostrar "Servidor no disponible" aunque el
+  // servidor estuviera perfecto. Se reintenta un par de veces antes de
+  // darse por vencido, igual que ya hace el monitor del lado del servidor.
+  var INTENTOS = 3;
+  function intentar(n) {
+    var pingUrl = baseUrl + '/ping.php?t=' + Date.now();
+    return intentarPing(pingUrl).then(function(ok) {
+      if (ok || n >= INTENTOS) return ok;
+      return new Promise(function(res) { setTimeout(res, 1500); })
+        .then(function() { return intentar(n + 1); });
+    });
+  }
+  return intentar(1);
 }
 
 function iniciarConexion() {
