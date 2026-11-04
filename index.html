@@ -312,16 +312,21 @@ function iniciarConexion() {
       'Consultando: ' + urlServidor + '/ping.php';
 
     verificarServidor(urlServidor).then(function(activo) {
-      if (activo) {
-        mostrar('p-exito');
-        setTimeout(function() {
-          window.location.href = destino;
-        }, 1200);
-      } else {
-        document.getElementById('msg-error-detalle').textContent =
-          destino + ' no respondio. Verifica que el servidor este encendido.';
-        mostrar('p-error');
-      }
+      // Si la verificacion por fetch() falla, NO se trata como prueba de
+      // que el servidor este caido. Motivo (descubierto 2026-11-04): en
+      // dispositivos que ademas estan en la misma red Tailscale que el
+      // servidor, el dominio resuelve a su IP privada (100.x) en vez de
+      // la IP publica del funnel; el navegador entonces bloquea el
+      // fetch() con el permiso "Private Network Access" (un popup que
+      // nadie aprueba a tiempo), aunque el servidor este perfecto y la
+      // navegacion directa SI funcione. Fetch no distingue "bloqueado
+      // por el navegador" de "servidor caido", asi que ante la duda se
+      // confia en la navegacion directa, igual que ya se hacia para el
+      // caso de un backend HTTP plano (bore.pub).
+      mostrar('p-exito');
+      setTimeout(function() {
+        window.location.href = destino;
+      }, activo ? 1200 : 300);
     });
   });
 }
